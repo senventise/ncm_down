@@ -171,9 +171,3 @@ if __name__ == "__main__":
         print_help()
         exit(0)
 
-    # first_run = True
-    # if first_run:
-    #     get_all_tracks(804484941)
-    # download_all()
-
-    # id = 804484941
