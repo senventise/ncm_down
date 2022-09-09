@@ -8,9 +8,9 @@
 ```shell
 git clone https://github.com/senventise/ncm_down.git
 cd ncm_down/
-# 下载歌单所有歌曲 id
+# 下载所有歌曲 id
 python main.py fetch [TRACK_ID]
-# 下载所有歌曲，已下载的会自动跳过
+# 根据本地数据库下载所有歌曲，已下载的会自动跳过
 python main.py download [TRACK_ID]
 ```
 ## 致谢
