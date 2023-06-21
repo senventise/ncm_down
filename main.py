@@ -7,6 +7,7 @@ import eyed3
 import requests
 from pyncm import DumpSessionAsString, LoadSessionFromString, GetCurrentSession, SetCurrentSession
 from pyncm.apis import login, playlist, track
+from rich import print
 
 
 def phone_login():
@@ -20,7 +21,7 @@ def phone_login():
     # password = getpass("密码: ")
     result = login.LoginViaCellphone(phone, captcha=captcha)
     if result:
-        print("登录成功")
+        print("[bold green]登录成功[/bold green]")
     with open("login.secret", "w+") as secret_file:
         print("登录状态已保存")
         secret_file.write(DumpSessionAsString(GetCurrentSession()))
@@ -47,9 +48,9 @@ def db_insert(track_id, at):
     cursor.execute('SELECT * FROM songs WHERE (id=?)', (track_id,))
     entry = cursor.fetchone()
     if entry is not None:
-        print(f"SKIP: {track_id}")
+        print(f"[italic]跳过: {track_id}[/italic]")
     else:
-        print(f"ADD: {track_id}")
+        print(f"添加: {track_id}")
         cursor.execute("INSERT INTO songs VALUES (?, ?, ?)", (track_id, at, 0))
 
 
@@ -60,10 +61,10 @@ def download_song(track_id, info, audio):
     title = info["name"]
     album = info["al"]["name"]
     if not album:
-        print(f"[跳过云盘]: {title}")
+        print(f"[italic]跳过云盘: {title}[/italic]")
         return
     if audio_url is None:
-        print(f"[无版权]: {title}-<{album}> {track_id}")
+        print(f"[italic]无版权: {title}-<{album}> {track_id}[/italic]")
         return
     authors = []
     filename = f"{title}.mp3".replace("/", "_")
@@ -73,14 +74,14 @@ def download_song(track_id, info, audio):
     try:
         cover = requests.get(info["al"]["picUrl"]).content
     except Exception as e:
-        print("封面下载失败")
+        print("[bold red]封面下载失败[/bold red]")
         return
-    print(f"[下载]: {title}-<{album}>")
+    print(f"[bold green]正在下载：{title}-<{album}>[/bold green]")
     try:
         lyrics = track.GetTrackLyrics(track_id)["lrc"]["lyric"]
     except Exception as e:
         if e is not KeyError:
-            print("下载歌词失败")
+            print("[bold red]下载歌词失败[/bold red]")
             return
         lyrics = None
     # TODO: 文件重名判定
@@ -88,18 +89,18 @@ def download_song(track_id, info, audio):
     try:
         resp = requests.get(audio_url)
         if not resp.ok:
-            print(f"[ERROR]: {resp.status_code} {audio_url}")
+            print(f"[bold red]出错：{resp.status_code} {audio_url}[/bold red]")
             return
         mp3 = resp.content
         with open(filename, "wb+") as file:
             file.write(mp3)
     except Exception as e:
-        print("歌曲下载失败")
+        print("[bold red]歌曲下载失败[/bold red]")
         print(e)
         return
     song = eyed3.load(filename)
     if song is None:
-        print(f"[ERROR]: {filename} failed to open")
+        print(f"[bold red]无法打开：{filename}[/bold red]")
         return
     if song.tag is None:
         song.initTag()
@@ -143,11 +144,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if not os.path.exists("login.secret"):
-        print("需要登录")
+        print("[bold red]需要登录[/bold red]")
         phone_login()
     # TODO: 登录状态确认
     with open("login.secret") as secret:
-        print("已登录")
+        print("[bold green]已登录[/bold green]")
         SetCurrentSession(LoadSessionFromString(secret.read()))
 
     if not os.path.exists(f"{args.track_id}.db"):
