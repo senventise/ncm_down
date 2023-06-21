@@ -1,9 +1,9 @@
 import os.path
 import sqlite3
-import eyed3
 from time import sleep
 import argparse
 
+import eyed3
 import requests
 from pyncm import DumpSessionAsString, LoadSessionFromString, GetCurrentSession, SetCurrentSession
 from pyncm.apis import login, playlist, track
@@ -82,8 +82,7 @@ def download_song(track_id, info, audio):
         if e is not KeyError:
             print("下载歌词失败")
             return
-        else:
-            lyrics = None
+        lyrics = None
     # TODO: 文件重名判定
     # TODO: 字符过滤
     try:
