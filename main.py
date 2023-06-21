@@ -1,8 +1,8 @@
 import os.path
-import sys
 import sqlite3
 import eyed3
 from time import sleep
+import argparse
 
 import requests
 from pyncm import DumpSessionAsString, LoadSessionFromString, GetCurrentSession, SetCurrentSession
@@ -113,7 +113,7 @@ def download_song(track_id, info, audio):
     song.tag.save(encoding="utf-8")
     cursor.execute("UPDATE songs SET downloaded=1 WHERE id=(?)", (track_id,))
     db.commit()
-    sleep(20)
+    sleep(args.sleep)
 
 
 def download_all():
@@ -134,40 +134,35 @@ def download_all():
             download_song(track_id, info, audio)
 
 
-def print_help():
-    help_massage = """网易云歌单下载
-
-Usage: 
-python main.py fetch [TRACK_ID]             更新本地歌曲数据库 
-python main.py download [TRACK_ID]          下载数据库内的歌曲
-    """
-    print(help_massage)
-
-
 if __name__ == "__main__":
-    if len(sys.argv) == 3:
-        if not os.path.exists("login.secret"):
-            print("需要登录")
-            phone_login()
-        # TODO: 登录状态确认
-        with open("login.secret") as secret:
-            print("已登录")
-            SetCurrentSession(LoadSessionFromString(secret.read()))
-        track_id = sys.argv[2]
-        if not os.path.exists(f"{track_id}.db"):
-            db = sqlite3.connect(f"{track_id}.db")
-            cursor = db.cursor()
-            cursor.execute("""CREATE TABLE "songs" ("id"INTEGER NOT NULL UNIQUE,"add_date"INTEGER,
-            "downloaded"INTEGER,PRIMARY KEY("id"))""")
-        else:
-            db = sqlite3.connect(f"{track_id}.db")
-            cursor = db.cursor()
-        if sys.argv[1] == "fetch":
-            get_all_tracks(track_id)
-        elif sys.argv[1] == "download":
-            download_all()
-        db.close()
-    else:
-        print_help()
-        exit(0)
+    parser = argparse.ArgumentParser(prog='python main.py', description='网易云音乐歌单下载')
 
+    parser.add_argument('action', choices=['fetch', 'download'], help='抓取歌单信息/下载')
+    parser.add_argument('--sleep', type=int, help='每首歌下载完毕后的睡眠时间，不建议设为很低的值。', default=15)
+    parser.add_argument('track_id', type=int, help='歌单的ID，可在歌单URL找到。')
+
+    args = parser.parse_args()
+
+    if not os.path.exists("login.secret"):
+        print("需要登录")
+        phone_login()
+    # TODO: 登录状态确认
+    with open("login.secret") as secret:
+        print("已登录")
+        SetCurrentSession(LoadSessionFromString(secret.read()))
+
+    if not os.path.exists(f"{args.track_id}.db"):
+        db = sqlite3.connect(f"{args.track_id}.db")
+        cursor = db.cursor()
+        cursor.execute("""CREATE TABLE "songs" ("id"INTEGER NOT NULL UNIQUE,"add_date"INTEGER,
+        "downloaded"INTEGER,PRIMARY KEY("id"))""")
+    else:
+        db = sqlite3.connect(f"{args.track_id}.db")
+        cursor = db.cursor()
+
+    if args.action == "fetch":
+        get_all_tracks(args.track_id)
+    elif args.action == "download":
+        download_all()
+
+    db.close()
