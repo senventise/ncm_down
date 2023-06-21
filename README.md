@@ -8,10 +8,12 @@
 ```shell
 git clone https://github.com/senventise/ncm_down.git
 cd ncm_down/
-# 下载所有歌曲 id
+# 抓取歌单信息
 python main.py fetch [TRACK_ID]
 # 根据本地数据库下载所有歌曲，已下载的会自动跳过
 python main.py download [TRACK_ID]
+# 为避免风控每首歌下完后会睡眠一段时间，可更改（不建议很小）
+python main.py download [TRACK_ID] --sleep 10
 ```
 ## 致谢
 感谢[pyncm](https://github.com/mos9527/pyncm)。
