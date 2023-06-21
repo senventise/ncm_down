@@ -8,6 +8,7 @@ import requests
 from pyncm import DumpSessionAsString, LoadSessionFromString, GetCurrentSession, SetCurrentSession
 from pyncm.apis import login, playlist, track
 from rich import print
+from rich import status
 
 
 def phone_login():
@@ -113,7 +114,8 @@ def download_song(track_id, info, audio):
     song.tag.save(encoding="utf-8")
     cursor.execute("UPDATE songs SET downloaded=1 WHERE id=(?)", (track_id,))
     db.commit()
-    sleep(args.sleep)
+    with status.Status('睡眠中...', spinner='point'):
+        sleep(args.sleep)
 
 
 def download_all():
