@@ -9,6 +9,7 @@ from pyncm import DumpSessionAsString, LoadSessionFromString, GetCurrentSession,
 from pyncm.apis import login, playlist, track
 from rich import print
 from rich import status
+from pathvalidate import sanitize_filename
 
 
 def phone_login():
@@ -68,7 +69,7 @@ def download_song(track_id, info, audio):
         print(f"[italic]无版权: {title}-<{album}> {track_id}[/italic]")
         return
     authors = []
-    filename = f"{title}.mp3".replace("/", "_")
+    filename = sanitize_filename(f"{title}.mp3")
     for author in info["ar"]:
         authors.append(author["name"])
     # cover = None
@@ -86,7 +87,6 @@ def download_song(track_id, info, audio):
             return
         lyrics = None
     # TODO: 文件重名判定
-    # TODO: 字符过滤
     try:
         resp = requests.get(audio_url)
         if not resp.ok:
