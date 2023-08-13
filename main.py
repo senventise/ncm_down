@@ -56,6 +56,16 @@ def db_insert(track_id, at):
         cursor.execute("INSERT INTO songs VALUES (?, ?, ?)", (track_id, at, 0))
 
 
+def db_downloaded(track_id):
+    """
+    将歌曲标记为已下载
+    :param track_id: 歌曲 id
+    :return:
+    """
+    cursor.execute("UPDATE songs SET downloaded=1 WHERE id=(?)", (track_id,))
+    db.commit()
+
+
 def download_song(track_id, info, audio):
     audio_url = audio["url"]
     # TODO: 校验 md5
@@ -86,22 +96,27 @@ def download_song(track_id, info, audio):
             print("[bold red]下载歌词失败[/bold red]")
             return
         lyrics = None
-    # TODO: 文件重名判定
     try:
+        full_path = os.path.join(args.output, filename)
+        if os.path.exists(full_path):
+            print(f'[bold red]文件: "{full_path}" 已存在，跳过[/bold red]')
+            db_downloaded(track_id)
+            return
+
         resp = requests.get(audio_url)
         if not resp.ok:
             print(f"[bold red]出错：{resp.status_code} {audio_url}[/bold red]")
             return
         mp3 = resp.content
-        with open(filename, "wb+") as file:
+        with open(full_path, "wb+") as file:
             file.write(mp3)
     except Exception as e:
         print("[bold red]歌曲下载失败[/bold red]")
         print(e)
         return
-    song = eyed3.load(filename)
+    song = eyed3.load(full_path)
     if song is None:
-        print(f"[bold red]无法打开：{filename}[/bold red]")
+        print(f"[bold red]无法打开：{full_path}[/bold red]")
         return
     if song.tag is None:
         song.initTag()
@@ -112,10 +127,12 @@ def download_song(track_id, info, audio):
     if lyrics:
         song.tag.lyrics.set(lyrics)
     song.tag.save(encoding="utf-8")
-    cursor.execute("UPDATE songs SET downloaded=1 WHERE id=(?)", (track_id,))
-    db.commit()
-    with status.Status('睡眠中...', spinner='point'):
-        sleep(args.sleep)
+    db_downloaded(track_id)
+    with status.Status('睡眠中（可按Ctrl+C强行退出睡眠）...', spinner='point'):
+        try:
+            sleep(args.sleep)
+        except KeyboardInterrupt:
+            print('已退出睡眠')
 
 
 def download_all():
@@ -141,6 +158,7 @@ if __name__ == "__main__":
 
     parser.add_argument('action', choices=['fetch', 'download'], help='抓取歌单信息/下载')
     parser.add_argument('--sleep', type=int, help='每首歌下载完毕后的睡眠时间，不建议设为很低的值。', default=15)
+    parser.add_argument('--output', help='歌曲保存路径。', default=".")
     parser.add_argument('track_id', type=int, help='歌单的ID，可在歌单URL找到。')
 
     args = parser.parse_args()
@@ -161,6 +179,11 @@ if __name__ == "__main__":
     else:
         db = sqlite3.connect(f"{args.track_id}.db")
         cursor = db.cursor()
+
+    if not os.path.exists(args.output):
+        print(f'[bold red]目标文件夹: "{args.output}" 不存在[/bold red]')
+        exit(1)
+    # TODO: 文件夹可写判定
 
     if args.action == "fetch":
         get_all_tracks(args.track_id)
