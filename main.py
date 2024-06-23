@@ -156,10 +156,19 @@ def download_all():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='python main.py', description='网易云音乐歌单下载')
 
-    parser.add_argument('action', choices=['fetch', 'download'], help='抓取歌单信息/下载')
-    parser.add_argument('--sleep', type=int, help='每首歌下载完毕后的睡眠时间，不建议设为很低的值。', default=15)
-    parser.add_argument('--output', help='歌曲保存路径。', default=".")
-    parser.add_argument('track_id', type=int, help='歌单的ID，可在歌单URL找到。')
+    parser.add_argument('action',
+                        choices=['fetch', 'download', 'update'],
+                        help='fetch: 抓取歌单信息, download: 下载, update: 抓取并下载')
+    parser.add_argument('--sleep',
+                        type=int,
+                        help='每首歌下载完毕后的睡眠时间，不建议设为很低的值。',
+                        default=15)
+    parser.add_argument('--output',
+                        help='歌曲保存路径。',
+                        default=".")
+    parser.add_argument('track_id',
+                        type=int,
+                        help='歌单的ID，可在歌单URL找到。')
 
     args = parser.parse_args()
 
@@ -188,6 +197,9 @@ if __name__ == "__main__":
     if args.action == "fetch":
         get_all_tracks(args.track_id)
     elif args.action == "download":
+        download_all()
+    elif args.action == "update":
+        get_all_tracks(args.track_id)
         download_all()
 
     db.close()
