@@ -2,6 +2,7 @@ import os.path
 import sqlite3
 from time import sleep
 import argparse
+import os
 
 import eyed3
 import requests
@@ -12,18 +13,19 @@ from rich import status
 from pathvalidate import sanitize_filename
 
 
-def phone_login():
+def cookie_login():
     """
-    手机号登录
+    Cookie登录，直接输入MUSIC_U
     """
-    phone = input("手机: ").strip()
-    login.SetSendRegisterVerifcationCodeViaCellphone(phone)
-    captcha = input("验证码: ").strip()
-    # 密码登录疑似失效
-    # password = getpass("密码: ")
-    result = login.LoginViaCellphone(phone, captcha=captcha)
+
+    cookie = input('MUSIC_U = ')
+    result = login.LoginViaCookie(cookie)
     if result:
         print("[bold green]登录成功[/bold green]")
+    else:
+        print("[bold red]登录失败[/bold red]")
+        return
+
     with open("login.secret", "w+") as secret_file:
         print("登录状态已保存")
         secret_file.write(DumpSessionAsString(GetCurrentSession()))
@@ -174,7 +176,7 @@ if __name__ == "__main__":
 
     if not os.path.exists("login.secret"):
         print("[bold red]需要登录[/bold red]")
-        phone_login()
+        cookie_login()
     # TODO: 登录状态确认
     with open("login.secret") as secret:
         print("[bold green]已登录[/bold green]")
